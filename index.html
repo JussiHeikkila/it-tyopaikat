@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT-työpaikat Suomessa</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            padding: 2rem;
+            border-bottom: 1px solid #475569;
+        }
+        .header h1 { font-size: 1.75rem; font-weight: 700; color: #f8fafc; }
+        .header .subtitle { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+        .header .sources { color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; }
+        .header .sources a { color: #60a5fa; text-decoration: none; }
+        .kpi-bar {
+            display: flex; gap: 1.5rem; padding: 1.5rem 2rem;
+            background: #1e293b; border-bottom: 1px solid #334155; flex-wrap: wrap;
+        }
+        .kpi {
+            background: #334155; padding: 1rem 1.5rem;
+            border-radius: 0.75rem; min-width: 180px;
+        }
+        .kpi .label { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .kpi .value { font-size: 1.75rem; font-weight: 700; color: #f8fafc; margin-top: 0.25rem; }
+        .kpi .sub { color: #64748b; font-size: 0.8rem; margin-top: 0.25rem; }
+        .container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .card {
+            background: #1e293b; border: 1px solid #334155;
+            border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 2rem;
+        }
+        .card h2 {
+            font-size: 1.1rem; color: #f8fafc; margin-bottom: 1rem;
+            padding-bottom: 0.75rem; border-bottom: 1px solid #334155;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th {
+            text-align: left; padding: 0.75rem 1rem; background: #334155;
+            color: #94a3b8; font-weight: 600; font-size: 0.8rem;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        th:first-child { border-radius: 0.5rem 0 0 0.5rem; }
+        th:last-child { border-radius: 0 0.5rem 0.5rem 0; }
+        td { padding: 0.75rem 1rem; border-bottom: 1px solid #0f172a; }
+        tr:nth-child(even) { background: #1e293b; }
+        tr:nth-child(odd) { background: #162032; }
+        tr:hover { background: #334155; transition: background 0.15s; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .count-col { font-weight: 700; color: #f8fafc; font-size: 1rem; }
+        .bar-cell { width: 40%; }
+        .bar-bg { background: #334155; border-radius: 0.25rem; height: 1.25rem; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 0.25rem; transition: width 0.3s; }
+        .positive { color: #4ade80; font-weight: 600; }
+        .negative { color: #f87171; font-weight: 600; }
+        .neutral { color: #64748b; }
+        .chart-container { position: relative; height: 420px; }
+        .footer {
+            text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem;
+        }
+        @media (max-width: 768px) {
+            .kpi-bar { flex-direction: column; }
+            .container { padding: 1rem; }
+            .bar-cell { display: none; }
+            table { font-size: 0.8rem; }
+            td, th { padding: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>IT-työpaikat Suomessa</h1>
+        <div class="subtitle">Avointen työpaikkojen päivittäinen seuranta tehtävittäin</div>
+        <div class="sources">
+            Lähde: <a href="https://duunitori.fi" target="_blank">Duunitori</a>
+            (aggregoi mm. TE-palvelut, yrityssivustot)
+        </div>
+    </div>
+
+    <div class="kpi-bar">
+        <div class="kpi">
+            <div class="label">Avoimia yhteensä</div>
+            <div class="value">459</div>
+            <div class="sub">seuratut kategoriat</div>
+        </div>
+        <div class="kpi">
+            <div class="label">Kategorioita</div>
+            <div class="value">17</div>
+            <div class="sub">seurannassa</div>
+        </div>
+        <div class="kpi">
+            <div class="label">Päivitetty</div>
+            <div class="value" style="font-size:1.1rem">2026-03-14 16:45</div>
+            <div class="sub">automaattinen ajo</div>
+        </div>
+        <div class="kpi">
+            <div class="label">Historiaa</div>
+            <div class="value">1</div>
+            <div class="sub">päivää</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Avoimet työpaikat tehtävittäin</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tehtävä</th>
+                        <th class="num">Avoimia</th>
+                        <th class="bar-cell"></th>
+                        <th class="num">Muutos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ohjelmistokehitys</td>
+                        <td class="num count-col">108</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:100%;background:#3B82F6"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Data Engineer</td>
+                        <td class="num count-col">68</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:63%;background:#6366F1"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Testaus / QA</td>
+                        <td class="num count-col">50</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:46%;background:#84CC16"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>AI Engineer</td>
+                        <td class="num count-col">45</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:42%;background:#22C55E"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Fullstack</td>
+                        <td class="num count-col">41</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:38%;background:#EF4444"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>SW Architect</td>
+                        <td class="num count-col">31</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:29%;background:#E11D48"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Cloud Engineer</td>
+                        <td class="num count-col">21</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:19%;background:#0EA5E9"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Backend</td>
+                        <td class="num count-col">15</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:14%;background:#F59E0B"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Embedded / Sulautetut</td>
+                        <td class="num count-col">12</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:11%;background:#8B5CF6"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Data Scientist</td>
+                        <td class="num count-col">12</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:11%;background:#F97316"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Cloud Architect</td>
+                        <td class="num count-col">12</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:11%;background:#A855F7"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Frontend</td>
+                        <td class="num count-col">11</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:10%;background:#10B981"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Data Architect</td>
+                        <td class="num count-col">9</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:8%;background:#14B8A6"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>GenAI Architect</td>
+                        <td class="num count-col">9</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:8%;background:#FF6B6B"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Mobiilisovelluskehitys</td>
+                        <td class="num count-col">8</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:7%;background:#EC4899"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>Design (UX/UI)</td>
+                        <td class="num count-col">4</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:4%;background:#06B6D4"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                    <tr>
+                        <td>GenAI Engineer</td>
+                        <td class="num count-col">3</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#D946EF"></div></div></td>
+                        <td class="num "></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Hakutermit kategorioittain</h2>
+            <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:1rem;">
+                Duunitori-haku: <code style="color:#60a5fa">+sana</code> = AND-pakotus.
+                <strong>sum</strong> = eri käsitteet, tulokset lasketaan yhteen.
+                <strong>best</strong> = synonyymit, suurin tulos valitaan.
+            </p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kategoria</th>
+                        <th>Hakutermit</th>
+                        <th class="num" style="width:80px">Tapa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ohjelmistokehitys</td>
+                        <td><code style="color:#e2e8f0">ohjelmistokehitys</code> , <code style="color:#e2e8f0">+software +developer</code> , <code style="color:#e2e8f0">+software +engineer</code></td>
+                        <td class="num" style="color:#4ade80">summa</td>
+                    </tr>
+                    <tr>
+                        <td>Fullstack</td>
+                        <td><code style="color:#e2e8f0">fullstack</code> , <code style="color:#e2e8f0">full-stack</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                    <tr>
+                        <td>Frontend</td>
+                        <td><code style="color:#e2e8f0">frontend</code> , <code style="color:#e2e8f0">front-end</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                    <tr>
+                        <td>Backend</td>
+                        <td><code style="color:#e2e8f0">backend</code> , <code style="color:#e2e8f0">back-end</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                    <tr>
+                        <td>Embedded / Sulautetut</td>
+                        <td><code style="color:#e2e8f0">+embedded +software</code> , <code style="color:#e2e8f0">+embedded +developer</code> , <code style="color:#e2e8f0">+sulautetut +järjestelmät</code></td>
+                        <td class="num" style="color:#4ade80">summa</td>
+                    </tr>
+                    <tr>
+                        <td>Mobiilisovelluskehitys</td>
+                        <td><code style="color:#e2e8f0">+mobile +developer</code> , <code style="color:#e2e8f0">+ios +developer</code> , <code style="color:#e2e8f0">+android +developer</code> , <code style="color:#e2e8f0">mobiilikehittäjä</code></td>
+                        <td class="num" style="color:#4ade80">summa</td>
+                    </tr>
+                    <tr>
+                        <td>Design (UX/UI)</td>
+                        <td><code style="color:#e2e8f0">+ux +designer</code> , <code style="color:#e2e8f0">+ui +designer</code></td>
+                        <td class="num" style="color:#4ade80">summa</td>
+                    </tr>
+                    <tr>
+                        <td>Testaus / QA</td>
+                        <td><code style="color:#e2e8f0">+test +engineer</code> , <code style="color:#e2e8f0">+qa +engineer</code> , <code style="color:#e2e8f0">testausinsinööri</code></td>
+                        <td class="num" style="color:#4ade80">summa</td>
+                    </tr>
+                    <tr>
+                        <td>Data Scientist</td>
+                        <td><code style="color:#e2e8f0">+data +scientist</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                    <tr>
+                        <td>Data Engineer</td>
+                        <td><code style="color:#e2e8f0">+data +engineer</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                    <tr>
+                        <td>Data Architect</td>
+                        <td><code style="color:#e2e8f0">+data +architect</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                    <tr>
+                        <td>SW Architect</td>
+                        <td><code style="color:#e2e8f0">+software +architect</code> , <code style="color:#e2e8f0">+solution +architect</code></td>
+                        <td class="num" style="color:#4ade80">summa</td>
+                    </tr>
+                    <tr>
+                        <td>Cloud Engineer</td>
+                        <td><code style="color:#e2e8f0">+cloud +engineer</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                    <tr>
+                        <td>Cloud Architect</td>
+                        <td><code style="color:#e2e8f0">+cloud +architect</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                    <tr>
+                        <td>GenAI Engineer</td>
+                        <td><code style="color:#e2e8f0">+genai +engineer</code> , <code style="color:#e2e8f0">+generative +ai +engineer</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                    <tr>
+                        <td>AI Engineer</td>
+                        <td><code style="color:#e2e8f0">+ai +engineer</code> , <code style="color:#e2e8f0">+machine +learning +engineer</code> , <code style="color:#e2e8f0">+ml +engineer</code></td>
+                        <td class="num" style="color:#4ade80">summa</td>
+                    </tr>
+                    <tr>
+                        <td>GenAI Architect</td>
+                        <td><code style="color:#e2e8f0">+genai +architect</code> , <code style="color:#e2e8f0">+ai +architect</code></td>
+                        <td class="num" style="color:#60a5fa">paras</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Kehitys (viimeiset 30 päivää)</h2>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Automaattinen päivittäinen ajo &middot; Data: Duunitori
+    </div>
+
+    <script>
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ["2026-03-14"],
+                datasets: [{"label": "Ohjelmistokehitys", "data": [108], "borderColor": "#3B82F6", "backgroundColor": "#3B82F620", "tension": 0.3, "borderWidth": 2}, {"label": "Fullstack", "data": [41], "borderColor": "#EF4444", "backgroundColor": "#EF444420", "tension": 0.3, "borderWidth": 2}, {"label": "Frontend", "data": [11], "borderColor": "#10B981", "backgroundColor": "#10B98120", "tension": 0.3, "borderWidth": 2}, {"label": "Backend", "data": [15], "borderColor": "#F59E0B", "backgroundColor": "#F59E0B20", "tension": 0.3, "borderWidth": 2}, {"label": "Embedded / Sulautetut", "data": [12], "borderColor": "#8B5CF6", "backgroundColor": "#8B5CF620", "tension": 0.3, "borderWidth": 2}, {"label": "Mobiilisovelluskehitys", "data": [8], "borderColor": "#EC4899", "backgroundColor": "#EC489920", "tension": 0.3, "borderWidth": 2}, {"label": "Design (UX/UI)", "data": [4], "borderColor": "#06B6D4", "backgroundColor": "#06B6D420", "tension": 0.3, "borderWidth": 2}, {"label": "Testaus / QA", "data": [50], "borderColor": "#84CC16", "backgroundColor": "#84CC1620", "tension": 0.3, "borderWidth": 2}, {"label": "Data Scientist", "data": [12], "borderColor": "#F97316", "backgroundColor": "#F9731620", "tension": 0.3, "borderWidth": 2}, {"label": "Data Engineer", "data": [68], "borderColor": "#6366F1", "backgroundColor": "#6366F120", "tension": 0.3, "borderWidth": 2}, {"label": "Data Architect", "data": [9], "borderColor": "#14B8A6", "backgroundColor": "#14B8A620", "tension": 0.3, "borderWidth": 2}, {"label": "SW Architect", "data": [31], "borderColor": "#E11D48", "backgroundColor": "#E11D4820", "tension": 0.3, "borderWidth": 2}, {"label": "Cloud Engineer", "data": [21], "borderColor": "#0EA5E9", "backgroundColor": "#0EA5E920", "tension": 0.3, "borderWidth": 2}, {"label": "Cloud Architect", "data": [12], "borderColor": "#A855F7", "backgroundColor": "#A855F720", "tension": 0.3, "borderWidth": 2}, {"label": "GenAI Engineer", "data": [3], "borderColor": "#D946EF", "backgroundColor": "#D946EF20", "tension": 0.3, "borderWidth": 2}, {"label": "AI Engineer", "data": [45], "borderColor": "#22C55E", "backgroundColor": "#22C55E20", "tension": 0.3, "borderWidth": 2}, {"label": "GenAI Architect", "data": [9], "borderColor": "#FF6B6B", "backgroundColor": "#FF6B6B20", "tension": 0.3, "borderWidth": 2}]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#94a3b8', boxWidth: 12, padding: 15, font: { size: 11 } }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        borderColor: '#475569',
+                        borderWidth: 1,
+                        titleColor: '#f8fafc',
+                        bodyColor: '#e2e8f0',
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+                    y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' }, beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
