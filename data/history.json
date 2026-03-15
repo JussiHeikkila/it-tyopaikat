@@ -58,59 +58,79 @@
   },
   {
     "date": "2026-03-15",
+    "source": "joblistings-api",
     "categories": {
       "Ohjelmistokehitys": {
-        "count": 101
+        "count": 59
       },
       "Fullstack": {
-        "count": 37
+        "count": 10
       },
       "Frontend": {
-        "count": 9
+        "count": 7
       },
       "Backend": {
-        "count": 15
+        "count": 7
       },
       "Embedded / Sulautetut": {
-        "count": 10
+        "count": 2
       },
       "Mobiilisovelluskehitys": {
-        "count": 8
+        "count": 12
       },
       "Design (UX/UI)": {
-        "count": 4
-      },
-      "Testaus / QA": {
-        "count": 52
-      },
-      "Data Scientist": {
-        "count": 11
-      },
-      "Data Engineer": {
-        "count": 66
-      },
-      "Data Architect": {
-        "count": 9
-      },
-      "SW Architect": {
         "count": 29
       },
-      "Cloud Engineer": {
-        "count": 21
+      "Testaus / QA": {
+        "count": 12
       },
-      "Cloud Architect": {
-        "count": 10
+      "Data & BI": {
+        "count": 11
       },
-      "GenAI Engineer": {
+      "Data Scientist": {
         "count": 3
       },
+      "Data Engineer": {
+        "count": 2
+      },
+      "Data Architect": {
+        "count": 0
+      },
+      "DevOps / SRE": {
+        "count": 30
+      },
+      "Tietoturva / IAM": {
+        "count": 10
+      },
+      "IT-projektinhallinta": {
+        "count": 15
+      },
+      "Järjestelmäasiantuntija": {
+        "count": 9
+      },
+      "SAP / ERP": {
+        "count": 10
+      },
+      "SW Architect": {
+        "count": 9
+      },
+      "Cloud Engineer": {
+        "count": 2
+      },
+      "Cloud Architect": {
+        "count": 0
+      },
+      "GenAI Engineer": {
+        "count": 0
+      },
       "AI Engineer": {
-        "count": 45
+        "count": 4
       },
       "GenAI Architect": {
-        "count": 9
+        "count": 0
       }
     },
-    "timestamp": "2026-03-15T06:21:26.599303"
+    "timestamp": "2026-03-15T16:29:55.868319",
+    "total_listings": 188
   }
 ]
