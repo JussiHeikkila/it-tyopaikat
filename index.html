@@ -26,16 +26,37 @@
             display: flex; gap: 1.5rem; padding: 1.5rem 2rem;
             background: #1e293b; border-bottom: 1px solid #334155; flex-wrap: wrap;
         }
-        .kpi { background: #334155; padding: 1rem 1.5rem; border-radius: 0.75rem; min-width: 180px; }
+        .kpi { background: #334155; padding: 1rem 1.5rem; border-radius: 0.75rem; min-width: 160px; }
         .kpi .label { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
         .kpi .value { font-size: 1.75rem; font-weight: 700; color: #f8fafc; margin-top: 0.25rem; }
         .kpi .sub { color: #64748b; font-size: 0.8rem; margin-top: 0.25rem; }
-        .container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+        .container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
         .card {
             background: #1e293b; border: 1px solid #334155;
             border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 2rem;
         }
         .card h2 { font-size: 1.1rem; color: #f8fafc; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #334155; }
+        /* Tabs */
+        .tabs {
+            display: flex; gap: 0; margin-bottom: 2rem;
+        }
+        .tab {
+            padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 600; font-size: 0.95rem;
+            border: 1px solid #334155; border-bottom: none;
+            border-radius: 0.5rem 0.5rem 0 0; background: #0f172a; color: #64748b;
+            transition: all 0.2s;
+        }
+        .tab:hover { color: #94a3b8; background: #1e293b; }
+        .tab.active { background: #1e293b; color: #f8fafc; border-color: #475569; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        /* Dual panel layout */
+        .dual-panels {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+        }
+        @media (max-width: 1024px) {
+            .dual-panels { grid-template-columns: 1fr; }
+        }
         table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         th {
             text-align: left; padding: 0.75rem 1rem; background: #334155;
@@ -53,11 +74,9 @@
         .bar-cell { width: 40%; }
         .bar-bg { background: #334155; border-radius: 0.25rem; height: 1.25rem; overflow: hidden; }
         .bar-fill { height: 100%; border-radius: 0.25rem; transition: width 0.3s; }
-        .positive { color: #4ade80; font-weight: 600; }
-        .negative { color: #f87171; font-weight: 600; }
-        .neutral { color: #64748b; }
         .chart-container { position: relative; height: 420px; }
         .footer { text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; }
+        .note { color: #64748b; font-size: 0.8rem; margin-top: 0.75rem; font-style: italic; }
         @media (max-width: 768px) {
             .kpi-bar { flex-direction: column; }
             .container { padding: 1rem; }
@@ -69,238 +88,568 @@
 </head>
 <body>
     <div class="header">
-        <h1>IT-työpaikat Suomessa
-            <span class="badge badge-api">API</span>
-        </h1>
-        <div class="subtitle">Avointen työpaikkojen päivittäinen seuranta tehtävittäin</div>
+        <h1>IT-työpaikat Suomessa</h1>
+        <div class="subtitle">Avointen IT-työpaikkojen seuranta kahdesta lähteestä</div>
         <div class="sources">
-            Lähde: <a href="https://joblistings.aiexp.fi" target="_blank">Joblistings API (joblistings.aiexp.fi)</a>
+            <a href="https://duunitori.fi" target="_blank">Duunitori</a> <span class="badge badge-scrape">SCRAPE</span>
+            &nbsp;&amp;&nbsp;
+            <a href="https://joblistings.aiexp.fi" target="_blank">Joblistings / Ailandai</a> <span class="badge badge-api">API</span>
         </div>
     </div>
 
     <div class="kpi-bar">
         <div class="kpi">
-            <div class="label">IT-kategorioissa</div>
-            <div class="value">243</div>
-            <div class="sub">luokitellut ilmoitukset</div>
+            <div class="label">Duunitori</div>
+            <div class="value" style="color:#93c5fd">558</div>
+            <div class="sub">luokitellut (2026-03-15 17:32)</div>
         </div>
         <div class="kpi">
-            <div class="label">API yhteensä</div>
+            <div class="label">Joblistings</div>
+            <div class="value" style="color:#6ee7b7">243</div>
+            <div class="sub">luokitellut (2026-03-15 17:24)</div>
+        </div>
+        <div class="kpi">
+            <div class="label">Joblistings kaikki</div>
             <div class="value">188</div>
-            <div class="sub">kaikki ilmoitukset</div>
+            <div class="sub">ilmoitukset yhteensä</div>
         </div>
         <div class="kpi">
             <div class="label">Kategorioita</div>
             <div class="value">23</div>
             <div class="sub">seurannassa</div>
         </div>
-        <div class="kpi">
-            <div class="label">Päivitetty</div>
-            <div class="value" style="font-size:1.1rem">2026-03-15 17:24</div>
-            <div class="sub">Joblistings API</div>
-        </div>
-        <div class="kpi">
-            <div class="label">Historiaa</div>
-            <div class="value">2</div>
-            <div class="sub">päivää</div>
-        </div>
     </div>
 
     <div class="container">
-        <div class="card">
-            <h2>Avoimet työpaikat tehtävittäin</h2>
-            <table>
-                <thead>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('side-by-side')">Rinnakkain</div>
+            <div class="tab" onclick="switchTab('duunitori')">Duunitori</div>
+            <div class="tab" onclick="switchTab('joblistings')">Joblistings</div>
+        </div>
+
+        <!-- Rinnakkain -->
+        <div id="tab-side-by-side" class="tab-content active">
+            <div class="dual-panels">
+                <div class="card">
+                    <h2>Duunitori <span class="badge badge-scrape">SCRAPE</span></h2>
+                    <table>
+                        <thead><tr><th>Tehtävä</th><th class="num">Avoimia</th><th class="bar-cell"></th></tr></thead>
+                        <tbody>
                     <tr>
-                        <th>Tehtävä</th>
-                        <th class="num">Avoimia</th>
-                        <th class="bar-cell"></th>
-                        <th class="num">Muutos</th>
+                        <td>Ohjelmistokehitys</td>
+                        <td class="num count-col">106</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:100%;background:#3B82F6"></div></div></td>
                     </tr>
-                </thead>
-                <tbody>
+                    <tr>
+                        <td>Data Engineer</td>
+                        <td class="num count-col">67</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:63%;background:#14B8A6"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Järjestelmäasiantuntija</td>
+                        <td class="num count-col">57</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:54%;background:#22C55E"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Testaus / QA</td>
+                        <td class="num count-col">52</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:49%;background:#84CC16"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>AI Engineer</td>
+                        <td class="num count-col">44</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:42%;background:#059669"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Fullstack</td>
+                        <td class="num count-col">38</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:36%;background:#EF4444"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>SW Architect</td>
+                        <td class="num count-col">30</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:28%;background:#0891B2"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Cloud Engineer</td>
+                        <td class="num count-col">21</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:20%;background:#65A30D"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Backend</td>
+                        <td class="num count-col">15</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:14%;background:#F59E0B"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Tietoturva / IAM</td>
+                        <td class="num count-col">14</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:13%;background:#A855F7"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Embedded / Sulautetut</td>
+                        <td class="num count-col">13</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#8B5CF6"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>DevOps / SRE</td>
+                        <td class="num count-col">13</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#0EA5E9"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Data Scientist</td>
+                        <td class="num count-col">12</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:11%;background:#6366F1"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Frontend</td>
+                        <td class="num count-col">10</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:9%;background:#10B981"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Data & BI</td>
+                        <td class="num count-col">10</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:9%;background:#F97316"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Cloud Architect</td>
+                        <td class="num count-col">10</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:9%;background:#C026D3"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Data Architect</td>
+                        <td class="num count-col">9</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:8%;background:#E11D48"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>GenAI Architect</td>
+                        <td class="num count-col">9</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:8%;background:#7C3AED"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Mobiilisovelluskehitys</td>
+                        <td class="num count-col">8</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:8%;background:#EC4899"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>SAP / ERP</td>
+                        <td class="num count-col">7</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:7%;background:#FF6B6B"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>IT-projektinhallinta</td>
+                        <td class="num count-col">6</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:6%;background:#D946EF"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Design (UX/UI)</td>
+                        <td class="num count-col">4</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:4%;background:#06B6D4"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>GenAI Engineer</td>
+                        <td class="num count-col">3</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#DC2626"></div></div></td>
+                    </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">Aggregoi TE-palvelut, yrityssivustot ym. Luvut = hakutulosten määrä.</div>
+                </div>
+                <div class="card">
+                    <h2>Joblistings <span class="badge badge-api">API</span></h2>
+                    <table>
+                        <thead><tr><th>Tehtävä</th><th class="num">Avoimia</th><th class="bar-cell"></th></tr></thead>
+                        <tbody>
                     <tr>
                         <td>Ohjelmistokehitys</td>
                         <td class="num count-col">59</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:100%;background:#3B82F6"></div></div></td>
-                        <td class="num negative">-49</td>
                     </tr>
                     <tr>
                         <td>DevOps / SRE</td>
                         <td class="num count-col">30</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:51%;background:#0EA5E9"></div></div></td>
-                        <td class="num "></td>
                     </tr>
                     <tr>
                         <td>Design (UX/UI)</td>
                         <td class="num count-col">29</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:49%;background:#06B6D4"></div></div></td>
-                        <td class="num positive">+25</td>
                     </tr>
                     <tr>
                         <td>IT-projektinhallinta</td>
                         <td class="num count-col">15</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:25%;background:#D946EF"></div></div></td>
-                        <td class="num "></td>
                     </tr>
                     <tr>
                         <td>Mobiilisovelluskehitys</td>
                         <td class="num count-col">12</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:20%;background:#EC4899"></div></div></td>
-                        <td class="num positive">+4</td>
                     </tr>
                     <tr>
                         <td>Testaus / QA</td>
                         <td class="num count-col">12</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:20%;background:#84CC16"></div></div></td>
-                        <td class="num negative">-38</td>
                     </tr>
                     <tr>
                         <td>Data & BI</td>
                         <td class="num count-col">11</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:19%;background:#F97316"></div></div></td>
-                        <td class="num "></td>
                     </tr>
                     <tr>
                         <td>Fullstack</td>
                         <td class="num count-col">10</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:17%;background:#EF4444"></div></div></td>
-                        <td class="num negative">-31</td>
                     </tr>
                     <tr>
                         <td>Tietoturva / IAM</td>
                         <td class="num count-col">10</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:17%;background:#A855F7"></div></div></td>
-                        <td class="num "></td>
                     </tr>
                     <tr>
                         <td>SAP / ERP</td>
                         <td class="num count-col">10</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:17%;background:#FF6B6B"></div></div></td>
-                        <td class="num "></td>
                     </tr>
                     <tr>
                         <td>Järjestelmäasiantuntija</td>
                         <td class="num count-col">9</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:15%;background:#22C55E"></div></div></td>
-                        <td class="num "></td>
                     </tr>
                     <tr>
                         <td>SW Architect</td>
                         <td class="num count-col">9</td>
-                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:15%;background:#3B82F6"></div></div></td>
-                        <td class="num negative">-22</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:15%;background:#0891B2"></div></div></td>
                     </tr>
                     <tr>
                         <td>Frontend</td>
                         <td class="num count-col">7</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#10B981"></div></div></td>
-                        <td class="num negative">-4</td>
                     </tr>
                     <tr>
                         <td>Backend</td>
                         <td class="num count-col">7</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#F59E0B"></div></div></td>
-                        <td class="num negative">-8</td>
                     </tr>
                     <tr>
                         <td>AI Engineer</td>
                         <td class="num count-col">4</td>
-                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:7%;background:#8B5CF6"></div></div></td>
-                        <td class="num negative">-41</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:7%;background:#059669"></div></div></td>
                     </tr>
                     <tr>
                         <td>Data Scientist</td>
                         <td class="num count-col">3</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:5%;background:#6366F1"></div></div></td>
-                        <td class="num negative">-9</td>
                     </tr>
                     <tr>
                         <td>Embedded / Sulautetut</td>
                         <td class="num count-col">2</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#8B5CF6"></div></div></td>
-                        <td class="num negative">-10</td>
                     </tr>
                     <tr>
                         <td>Data Engineer</td>
                         <td class="num count-col">2</td>
                         <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#14B8A6"></div></div></td>
-                        <td class="num negative">-66</td>
                     </tr>
                     <tr>
                         <td>Cloud Engineer</td>
                         <td class="num count-col">2</td>
-                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#EF4444"></div></div></td>
-                        <td class="num negative">-19</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#65A30D"></div></div></td>
+                    </tr>
+                        </tbody>
+                    </table>
+                    <div class="note">AI-luokitellut ilmoitukset joblistings.aiexp.fi:stä (188 ilmoitusta yhteensä).</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Duunitori -->
+        <div id="tab-duunitori" class="tab-content">
+            <div class="card">
+                <h2>Duunitori — avoimet työpaikat <span class="badge badge-scrape">SCRAPE</span></h2>
+                <table>
+                    <thead><tr><th>Tehtävä</th><th class="num">Avoimia</th><th class="bar-cell"></th></tr></thead>
+                    <tbody>
+                    <tr>
+                        <td>Ohjelmistokehitys</td>
+                        <td class="num count-col">106</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:100%;background:#3B82F6"></div></div></td>
                     </tr>
                     <tr>
-                        <td>Data Architect</td>
-                        <td class="num count-col">0</td>
-                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:0%;background:#E11D48"></div></div></td>
-                        <td class="num negative">-9</td>
+                        <td>Data Engineer</td>
+                        <td class="num count-col">67</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:63%;background:#14B8A6"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Järjestelmäasiantuntija</td>
+                        <td class="num count-col">57</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:54%;background:#22C55E"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Testaus / QA</td>
+                        <td class="num count-col">52</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:49%;background:#84CC16"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>AI Engineer</td>
+                        <td class="num count-col">44</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:42%;background:#059669"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Fullstack</td>
+                        <td class="num count-col">38</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:36%;background:#EF4444"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>SW Architect</td>
+                        <td class="num count-col">30</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:28%;background:#0891B2"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Cloud Engineer</td>
+                        <td class="num count-col">21</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:20%;background:#65A30D"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Backend</td>
+                        <td class="num count-col">15</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:14%;background:#F59E0B"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Tietoturva / IAM</td>
+                        <td class="num count-col">14</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:13%;background:#A855F7"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Embedded / Sulautetut</td>
+                        <td class="num count-col">13</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#8B5CF6"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>DevOps / SRE</td>
+                        <td class="num count-col">13</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#0EA5E9"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Data Scientist</td>
+                        <td class="num count-col">12</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:11%;background:#6366F1"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Frontend</td>
+                        <td class="num count-col">10</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:9%;background:#10B981"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Data & BI</td>
+                        <td class="num count-col">10</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:9%;background:#F97316"></div></div></td>
                     </tr>
                     <tr>
                         <td>Cloud Architect</td>
-                        <td class="num count-col">0</td>
-                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:0%;background:#10B981"></div></div></td>
-                        <td class="num negative">-12</td>
+                        <td class="num count-col">10</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:9%;background:#C026D3"></div></div></td>
                     </tr>
                     <tr>
-                        <td>GenAI Engineer</td>
-                        <td class="num count-col">0</td>
-                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:0%;background:#F59E0B"></div></div></td>
-                        <td class="num negative">-3</td>
+                        <td>Data Architect</td>
+                        <td class="num count-col">9</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:8%;background:#E11D48"></div></div></td>
                     </tr>
                     <tr>
                         <td>GenAI Architect</td>
-                        <td class="num count-col">0</td>
-                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:0%;background:#EC4899"></div></div></td>
-                        <td class="num negative">-9</td>
+                        <td class="num count-col">9</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:8%;background:#7C3AED"></div></div></td>
                     </tr>
-                </tbody>
-            </table>
+                    <tr>
+                        <td>Mobiilisovelluskehitys</td>
+                        <td class="num count-col">8</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:8%;background:#EC4899"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>SAP / ERP</td>
+                        <td class="num count-col">7</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:7%;background:#FF6B6B"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>IT-projektinhallinta</td>
+                        <td class="num count-col">6</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:6%;background:#D946EF"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Design (UX/UI)</td>
+                        <td class="num count-col">4</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:4%;background:#06B6D4"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>GenAI Engineer</td>
+                        <td class="num count-col">3</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#DC2626"></div></div></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="note">Duunitori aggregoi useita lähteitä (TE-palvelut, yrityssivustot ym.). Päivitetty 2026-03-15 17:32.</div>
+            </div>
+            <div class="card">
+                <h2>Duunitori — kehitys (viimeiset 30 päivää)</h2>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
         </div>
 
-        <div class="card">
-            <h2>Kehitys (viimeiset 30 päivää)</h2>
-            <div class="chart-container">
-                <canvas id="trendChart"></canvas>
+        <!-- Joblistings -->
+        <div id="tab-joblistings" class="tab-content">
+            <div class="card">
+                <h2>Joblistings — avoimet työpaikat <span class="badge badge-api">API</span></h2>
+                <table>
+                    <thead><tr><th>Tehtävä</th><th class="num">Avoimia</th><th class="bar-cell"></th></tr></thead>
+                    <tbody>
+                    <tr>
+                        <td>Ohjelmistokehitys</td>
+                        <td class="num count-col">59</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:100%;background:#3B82F6"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>DevOps / SRE</td>
+                        <td class="num count-col">30</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:51%;background:#0EA5E9"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Design (UX/UI)</td>
+                        <td class="num count-col">29</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:49%;background:#06B6D4"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>IT-projektinhallinta</td>
+                        <td class="num count-col">15</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:25%;background:#D946EF"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Mobiilisovelluskehitys</td>
+                        <td class="num count-col">12</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:20%;background:#EC4899"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Testaus / QA</td>
+                        <td class="num count-col">12</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:20%;background:#84CC16"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Data & BI</td>
+                        <td class="num count-col">11</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:19%;background:#F97316"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Fullstack</td>
+                        <td class="num count-col">10</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:17%;background:#EF4444"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Tietoturva / IAM</td>
+                        <td class="num count-col">10</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:17%;background:#A855F7"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>SAP / ERP</td>
+                        <td class="num count-col">10</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:17%;background:#FF6B6B"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Järjestelmäasiantuntija</td>
+                        <td class="num count-col">9</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:15%;background:#22C55E"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>SW Architect</td>
+                        <td class="num count-col">9</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:15%;background:#0891B2"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Frontend</td>
+                        <td class="num count-col">7</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#10B981"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Backend</td>
+                        <td class="num count-col">7</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:12%;background:#F59E0B"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>AI Engineer</td>
+                        <td class="num count-col">4</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:7%;background:#059669"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Data Scientist</td>
+                        <td class="num count-col">3</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:5%;background:#6366F1"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Embedded / Sulautetut</td>
+                        <td class="num count-col">2</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#8B5CF6"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Data Engineer</td>
+                        <td class="num count-col">2</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#14B8A6"></div></div></td>
+                    </tr>
+                    <tr>
+                        <td>Cloud Engineer</td>
+                        <td class="num count-col">2</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:3%;background:#65A30D"></div></div></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="note">188 ilmoitusta yhteensä, joista 243 luokiteltu IT-kategorioihin. Päivitetty 2026-03-15 17:24.</div>
             </div>
         </div>
     </div>
 
     <div class="footer">
-        Data: Joblistings API
+        Data: Duunitori &amp; Joblistings API (joblistings.aiexp.fi)
     </div>
 
     <script>
-        const ctx = document.getElementById('trendChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ["2026-03-14", "2026-03-15"],
-                datasets: [{"label": "Ohjelmistokehitys", "data": [108, 59], "borderColor": "#3B82F6", "backgroundColor": "#3B82F620", "tension": 0.3, "borderWidth": 2}, {"label": "Fullstack", "data": [41, 10], "borderColor": "#EF4444", "backgroundColor": "#EF444420", "tension": 0.3, "borderWidth": 2}, {"label": "Frontend", "data": [11, 7], "borderColor": "#10B981", "backgroundColor": "#10B98120", "tension": 0.3, "borderWidth": 2}, {"label": "Backend", "data": [15, 7], "borderColor": "#F59E0B", "backgroundColor": "#F59E0B20", "tension": 0.3, "borderWidth": 2}, {"label": "Embedded / Sulautetut", "data": [12, 2], "borderColor": "#8B5CF6", "backgroundColor": "#8B5CF620", "tension": 0.3, "borderWidth": 2}, {"label": "Mobiilisovelluskehitys", "data": [8, 12], "borderColor": "#EC4899", "backgroundColor": "#EC489920", "tension": 0.3, "borderWidth": 2}, {"label": "Design (UX/UI)", "data": [4, 29], "borderColor": "#06B6D4", "backgroundColor": "#06B6D420", "tension": 0.3, "borderWidth": 2}, {"label": "Testaus / QA", "data": [50, 12], "borderColor": "#84CC16", "backgroundColor": "#84CC1620", "tension": 0.3, "borderWidth": 2}, {"label": "Data & BI", "data": [0, 11], "borderColor": "#F97316", "backgroundColor": "#F9731620", "tension": 0.3, "borderWidth": 2}, {"label": "Data Scientist", "data": [12, 3], "borderColor": "#6366F1", "backgroundColor": "#6366F120", "tension": 0.3, "borderWidth": 2}, {"label": "Data Engineer", "data": [68, 2], "borderColor": "#14B8A6", "backgroundColor": "#14B8A620", "tension": 0.3, "borderWidth": 2}, {"label": "Data Architect", "data": [9, 0], "borderColor": "#E11D48", "backgroundColor": "#E11D4820", "tension": 0.3, "borderWidth": 2}, {"label": "DevOps / SRE", "data": [0, 30], "borderColor": "#0EA5E9", "backgroundColor": "#0EA5E920", "tension": 0.3, "borderWidth": 2}, {"label": "Tietoturva / IAM", "data": [0, 10], "borderColor": "#A855F7", "backgroundColor": "#A855F720", "tension": 0.3, "borderWidth": 2}, {"label": "IT-projektinhallinta", "data": [0, 15], "borderColor": "#D946EF", "backgroundColor": "#D946EF20", "tension": 0.3, "borderWidth": 2}, {"label": "Järjestelmäasiantuntija", "data": [0, 9], "borderColor": "#22C55E", "backgroundColor": "#22C55E20", "tension": 0.3, "borderWidth": 2}, {"label": "SAP / ERP", "data": [0, 10], "borderColor": "#FF6B6B", "backgroundColor": "#FF6B6B20", "tension": 0.3, "borderWidth": 2}, {"label": "SW Architect", "data": [31, 9], "borderColor": "#3B82F6", "backgroundColor": "#3B82F620", "tension": 0.3, "borderWidth": 2}, {"label": "Cloud Engineer", "data": [21, 2], "borderColor": "#EF4444", "backgroundColor": "#EF444420", "tension": 0.3, "borderWidth": 2}, {"label": "Cloud Architect", "data": [12, 0], "borderColor": "#10B981", "backgroundColor": "#10B98120", "tension": 0.3, "borderWidth": 2}, {"label": "GenAI Engineer", "data": [3, 0], "borderColor": "#F59E0B", "backgroundColor": "#F59E0B20", "tension": 0.3, "borderWidth": 2}, {"label": "AI Engineer", "data": [45, 4], "borderColor": "#8B5CF6", "backgroundColor": "#8B5CF620", "tension": 0.3, "borderWidth": 2}, {"label": "GenAI Architect", "data": [9, 0], "borderColor": "#EC4899", "backgroundColor": "#EC489920", "tension": 0.3, "borderWidth": 2}]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { color: '#94a3b8', boxWidth: 12, padding: 15, font: { size: 11 } }
-                    },
-                    tooltip: {
-                        backgroundColor: '#1e293b', borderColor: '#475569', borderWidth: 1,
-                        titleColor: '#f8fafc', bodyColor: '#e2e8f0',
-                    }
-                },
-                scales: {
-                    x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-                    y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' }, beginAtZero: true }
-                }
+        function switchTab(name) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            event.target.classList.add('active');
+            // Init chart when Duunitori tab shown
+            if (name === 'duunitori' && !window.chartInit) {
+                initChart();
             }
-        });
+        }
+
+        function initChart() {
+            window.chartInit = true;
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ["2026-03-14", "2026-03-15"],
+                    datasets: [{"label": "Ohjelmistokehitys", "data": [108, 106], "borderColor": "#3B82F6", "backgroundColor": "#3B82F620", "tension": 0.3, "borderWidth": 2}, {"label": "Fullstack", "data": [41, 38], "borderColor": "#EF4444", "backgroundColor": "#EF444420", "tension": 0.3, "borderWidth": 2}, {"label": "Frontend", "data": [11, 10], "borderColor": "#10B981", "backgroundColor": "#10B98120", "tension": 0.3, "borderWidth": 2}, {"label": "Backend", "data": [15, 15], "borderColor": "#F59E0B", "backgroundColor": "#F59E0B20", "tension": 0.3, "borderWidth": 2}, {"label": "Embedded / Sulautetut", "data": [12, 13], "borderColor": "#8B5CF6", "backgroundColor": "#8B5CF620", "tension": 0.3, "borderWidth": 2}, {"label": "Mobiilisovelluskehitys", "data": [8, 8], "borderColor": "#EC4899", "backgroundColor": "#EC489920", "tension": 0.3, "borderWidth": 2}, {"label": "Design (UX/UI)", "data": [4, 4], "borderColor": "#06B6D4", "backgroundColor": "#06B6D420", "tension": 0.3, "borderWidth": 2}, {"label": "Testaus / QA", "data": [50, 52], "borderColor": "#84CC16", "backgroundColor": "#84CC1620", "tension": 0.3, "borderWidth": 2}, {"label": "Data & BI", "data": [0, 10], "borderColor": "#F97316", "backgroundColor": "#F9731620", "tension": 0.3, "borderWidth": 2}, {"label": "Data Scientist", "data": [12, 12], "borderColor": "#6366F1", "backgroundColor": "#6366F120", "tension": 0.3, "borderWidth": 2}, {"label": "Data Engineer", "data": [68, 67], "borderColor": "#14B8A6", "backgroundColor": "#14B8A620", "tension": 0.3, "borderWidth": 2}, {"label": "Data Architect", "data": [9, 9], "borderColor": "#E11D48", "backgroundColor": "#E11D4820", "tension": 0.3, "borderWidth": 2}, {"label": "DevOps / SRE", "data": [0, 13], "borderColor": "#0EA5E9", "backgroundColor": "#0EA5E920", "tension": 0.3, "borderWidth": 2}, {"label": "Tietoturva / IAM", "data": [0, 14], "borderColor": "#A855F7", "backgroundColor": "#A855F720", "tension": 0.3, "borderWidth": 2}, {"label": "IT-projektinhallinta", "data": [0, 6], "borderColor": "#D946EF", "backgroundColor": "#D946EF20", "tension": 0.3, "borderWidth": 2}, {"label": "Järjestelmäasiantuntija", "data": [0, 57], "borderColor": "#22C55E", "backgroundColor": "#22C55E20", "tension": 0.3, "borderWidth": 2}, {"label": "SAP / ERP", "data": [0, 7], "borderColor": "#FF6B6B", "backgroundColor": "#FF6B6B20", "tension": 0.3, "borderWidth": 2}, {"label": "SW Architect", "data": [31, 30], "borderColor": "#0891B2", "backgroundColor": "#0891B220", "tension": 0.3, "borderWidth": 2}, {"label": "Cloud Engineer", "data": [21, 21], "borderColor": "#65A30D", "backgroundColor": "#65A30D20", "tension": 0.3, "borderWidth": 2}, {"label": "Cloud Architect", "data": [12, 10], "borderColor": "#C026D3", "backgroundColor": "#C026D320", "tension": 0.3, "borderWidth": 2}, {"label": "GenAI Engineer", "data": [3, 3], "borderColor": "#DC2626", "backgroundColor": "#DC262620", "tension": 0.3, "borderWidth": 2}, {"label": "AI Engineer", "data": [45, 44], "borderColor": "#059669", "backgroundColor": "#05966920", "tension": 0.3, "borderWidth": 2}, {"label": "GenAI Architect", "data": [9, 9], "borderColor": "#7C3AED", "backgroundColor": "#7C3AED20", "tension": 0.3, "borderWidth": 2}]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', boxWidth: 12, padding: 15, font: { size: 11 } }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b', borderColor: '#475569', borderWidth: 1,
+                            titleColor: '#f8fafc', bodyColor: '#e2e8f0',
+                        }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
+                        y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>

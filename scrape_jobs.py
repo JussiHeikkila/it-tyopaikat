@@ -340,60 +340,83 @@ def save_history(history: list):
         json.dump(history, f, indent=2, ensure_ascii=False)
 
 
+def _build_source_table(counts, categories, colors):
+    """Rakenna yhden lähteen taulukkorivit."""
+    rows = []
+    for cat in categories:
+        rows.append({"category": cat, "count": counts.get(cat, 0)})
+    rows.sort(key=lambda r: r["count"], reverse=True)
+    max_count = max((r["count"] for r in rows), default=1) or 1
+    html = ""
+    for row in rows:
+        if row["count"] == 0:
+            continue
+        pct = (row["count"] / max_count) * 100
+        ci = list(CATEGORIES.keys()).index(row["category"]) % len(colors)
+        color = colors[ci]
+        html += f"""                    <tr>
+                        <td>{row["category"]}</td>
+                        <td class="num count-col">{row["count"]}</td>
+                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:{pct:.0f}%;background:{color}"></div></div></td>
+                    </tr>
+"""
+    return html
+
+
 def generate_html(history: list):
     html_file = Path(__file__).parent / "index.html"
-    today_data = history[-1] if history else None
-    prev_data = history[-2] if len(history) >= 2 else None
-
-    source = today_data.get("source", "duunitori") if today_data else "duunitori"
-    is_api = source == "joblistings-api"
-    total_listings = today_data.get("total_listings", 0) if today_data else 0
-
-    table_rows = []
-    if today_data:
-        for cat, data in today_data["categories"].items():
-            count = data["count"]
-            change = ""
-            change_class = ""
-            if prev_data and cat in prev_data["categories"]:
-                prev_count = prev_data["categories"][cat]["count"]
-                diff = count - prev_count
-                if diff > 0:
-                    change = f"+{diff}"
-                    change_class = "positive"
-                elif diff < 0:
-                    change = str(diff)
-                    change_class = "negative"
-                else:
-                    change = "0"
-                    change_class = "neutral"
-            table_rows.append({"category": cat, "count": count, "change": change, "change_class": change_class})
-
     categories = list(CATEGORIES.keys())
-    dates = [h["date"] for h in history[-30:]]
+
+    # Erota lähteet: viimeisin data kummastakin
+    latest_duunitori = None
+    latest_joblistings = None
+    for h in reversed(history):
+        src = h.get("source", "duunitori")
+        if src == "duunitori" and not latest_duunitori:
+            latest_duunitori = h
+        elif src == "joblistings-api" and not latest_joblistings:
+            latest_joblistings = h
+        if latest_duunitori and latest_joblistings:
+            break
 
     colors = [
         "#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6",
         "#EC4899", "#06B6D4", "#84CC16", "#F97316", "#6366F1",
         "#14B8A6", "#E11D48", "#0EA5E9", "#A855F7", "#D946EF",
-        "#22C55E", "#FF6B6B",
+        "#22C55E", "#FF6B6B", "#0891B2", "#65A30D", "#C026D3",
+        "#DC2626", "#059669", "#7C3AED",
     ]
-    chart_datasets = []
+
+    def get_counts(data):
+        if not data:
+            return {}
+        return {cat: data["categories"].get(cat, {}).get("count", 0) for cat in categories}
+
+    duunitori_counts = get_counts(latest_duunitori)
+    joblistings_counts = get_counts(latest_joblistings)
+
+    duunitori_total = sum(duunitori_counts.values()) if duunitori_counts else 0
+    joblistings_total = sum(joblistings_counts.values()) if joblistings_counts else 0
+    api_all = latest_joblistings.get("total_listings", 0) if latest_joblistings else 0
+
+    duunitori_time = latest_duunitori["timestamp"][:16].replace("T", " ") if latest_duunitori else "-"
+    joblistings_time = latest_joblistings["timestamp"][:16].replace("T", " ") if latest_joblistings else "-"
+
+    duunitori_rows = _build_source_table(duunitori_counts, categories, colors)
+    joblistings_rows = _build_source_table(joblistings_counts, categories, colors)
+
+    # Chart: Duunitori-historia
+    duunitori_history = [h for h in history if h.get("source", "duunitori") == "duunitori"][-30:]
+    d_dates = [h["date"] for h in duunitori_history]
+    d_datasets = []
     for i, cat in enumerate(categories):
-        values = [h["categories"].get(cat, {}).get("count", 0) for h in history[-30:]]
-        chart_datasets.append({
+        values = [h["categories"].get(cat, {}).get("count", 0) for h in duunitori_history]
+        d_datasets.append({
             "label": cat, "data": values,
             "borderColor": colors[i % len(colors)],
             "backgroundColor": colors[i % len(colors)] + "20",
             "tension": 0.3, "borderWidth": 2,
         })
-
-    grand_total = sum(r["count"] for r in table_rows) if table_rows else 0
-    update_time = today_data["timestamp"][:16].replace("T", " ") if today_data else "-"
-
-    source_label = "Joblistings API (joblistings.aiexp.fi)" if is_api else "Duunitori (aggregoi mm. TE-palvelut, yrityssivustot)"
-    source_url = "https://joblistings.aiexp.fi" if is_api else "https://duunitori.fi"
-    source_name = "Joblistings API" if is_api else "Duunitori"
 
     html = f"""<!DOCTYPE html>
 <html lang="fi">
@@ -423,16 +446,37 @@ def generate_html(history: list):
             display: flex; gap: 1.5rem; padding: 1.5rem 2rem;
             background: #1e293b; border-bottom: 1px solid #334155; flex-wrap: wrap;
         }}
-        .kpi {{ background: #334155; padding: 1rem 1.5rem; border-radius: 0.75rem; min-width: 180px; }}
+        .kpi {{ background: #334155; padding: 1rem 1.5rem; border-radius: 0.75rem; min-width: 160px; }}
         .kpi .label {{ color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }}
         .kpi .value {{ font-size: 1.75rem; font-weight: 700; color: #f8fafc; margin-top: 0.25rem; }}
         .kpi .sub {{ color: #64748b; font-size: 0.8rem; margin-top: 0.25rem; }}
-        .container {{ padding: 2rem; max-width: 1200px; margin: 0 auto; }}
+        .container {{ padding: 2rem; max-width: 1400px; margin: 0 auto; }}
         .card {{
             background: #1e293b; border: 1px solid #334155;
             border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 2rem;
         }}
         .card h2 {{ font-size: 1.1rem; color: #f8fafc; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #334155; }}
+        /* Tabs */
+        .tabs {{
+            display: flex; gap: 0; margin-bottom: 2rem;
+        }}
+        .tab {{
+            padding: 0.75rem 1.5rem; cursor: pointer; font-weight: 600; font-size: 0.95rem;
+            border: 1px solid #334155; border-bottom: none;
+            border-radius: 0.5rem 0.5rem 0 0; background: #0f172a; color: #64748b;
+            transition: all 0.2s;
+        }}
+        .tab:hover {{ color: #94a3b8; background: #1e293b; }}
+        .tab.active {{ background: #1e293b; color: #f8fafc; border-color: #475569; }}
+        .tab-content {{ display: none; }}
+        .tab-content.active {{ display: block; }}
+        /* Dual panel layout */
+        .dual-panels {{
+            display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+        }}
+        @media (max-width: 1024px) {{
+            .dual-panels {{ grid-template-columns: 1fr; }}
+        }}
         table {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
         th {{
             text-align: left; padding: 0.75rem 1rem; background: #334155;
@@ -450,11 +494,9 @@ def generate_html(history: list):
         .bar-cell {{ width: 40%; }}
         .bar-bg {{ background: #334155; border-radius: 0.25rem; height: 1.25rem; overflow: hidden; }}
         .bar-fill {{ height: 100%; border-radius: 0.25rem; transition: width 0.3s; }}
-        .positive {{ color: #4ade80; font-weight: 600; }}
-        .negative {{ color: #f87171; font-weight: 600; }}
-        .neutral {{ color: #64748b; }}
         .chart-container {{ position: relative; height: 420px; }}
         .footer {{ text-align: center; padding: 2rem; color: #475569; font-size: 0.8rem; }}
+        .note {{ color: #64748b; font-size: 0.8rem; margin-top: 0.75rem; font-style: italic; }}
         @media (max-width: 768px) {{
             .kpi-bar {{ flex-direction: column; }}
             .container {{ padding: 1rem; }}
@@ -466,120 +508,148 @@ def generate_html(history: list):
 </head>
 <body>
     <div class="header">
-        <h1>IT-työpaikat Suomessa
-            <span class="badge {"badge-api" if is_api else "badge-scrape"}">{"API" if is_api else "SCRAPE"}</span>
-        </h1>
-        <div class="subtitle">Avointen työpaikkojen päivittäinen seuranta tehtävittäin</div>
+        <h1>IT-työpaikat Suomessa</h1>
+        <div class="subtitle">Avointen IT-työpaikkojen seuranta kahdesta lähteestä</div>
         <div class="sources">
-            Lähde: <a href="{source_url}" target="_blank">{source_label}</a>
+            <a href="https://duunitori.fi" target="_blank">Duunitori</a> <span class="badge badge-scrape">SCRAPE</span>
+            &nbsp;&amp;&nbsp;
+            <a href="https://joblistings.aiexp.fi" target="_blank">Joblistings / Ailandai</a> <span class="badge badge-api">API</span>
         </div>
     </div>
 
     <div class="kpi-bar">
         <div class="kpi">
-            <div class="label">IT-kategorioissa</div>
-            <div class="value">{grand_total:,}</div>
-            <div class="sub">luokitellut ilmoitukset</div>
-        </div>"""
-
-    if is_api:
-        html += f"""
+            <div class="label">Duunitori</div>
+            <div class="value" style="color:#93c5fd">{duunitori_total:,}</div>
+            <div class="sub">luokitellut ({duunitori_time})</div>
+        </div>
         <div class="kpi">
-            <div class="label">API yhteensä</div>
-            <div class="value">{total_listings:,}</div>
-            <div class="sub">kaikki ilmoitukset</div>
-        </div>"""
-
-    html += f"""
+            <div class="label">Joblistings</div>
+            <div class="value" style="color:#6ee7b7">{joblistings_total:,}</div>
+            <div class="sub">luokitellut ({joblistings_time})</div>
+        </div>
+        <div class="kpi">
+            <div class="label">Joblistings kaikki</div>
+            <div class="value">{api_all:,}</div>
+            <div class="sub">ilmoitukset yhteensä</div>
+        </div>
         <div class="kpi">
             <div class="label">Kategorioita</div>
             <div class="value">{len(categories)}</div>
             <div class="sub">seurannassa</div>
         </div>
-        <div class="kpi">
-            <div class="label">Päivitetty</div>
-            <div class="value" style="font-size:1.1rem">{update_time}</div>
-            <div class="sub">{source_name}</div>
-        </div>
-        <div class="kpi">
-            <div class="label">Historiaa</div>
-            <div class="value">{len(history)}</div>
-            <div class="sub">päivää</div>
-        </div>
     </div>
 
     <div class="container">
-        <div class="card">
-            <h2>Avoimet työpaikat tehtävittäin</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tehtävä</th>
-                        <th class="num">Avoimia</th>
-                        <th class="bar-cell"></th>
-                        <th class="num">Muutos</th>
-                    </tr>
-                </thead>
-                <tbody>
-"""
-
-    sorted_rows = sorted(table_rows, key=lambda r: r["count"], reverse=True)
-    max_count = max((r["count"] for r in sorted_rows), default=1) or 1
-    for row in sorted_rows:
-        pct = (row["count"] / max_count) * 100
-        color = colors[list(CATEGORIES.keys()).index(row["category"]) % len(colors)]
-        html += f"""                    <tr>
-                        <td>{row["category"]}</td>
-                        <td class="num count-col">{row["count"]}</td>
-                        <td class="bar-cell"><div class="bar-bg"><div class="bar-fill" style="width:{pct:.0f}%;background:{color}"></div></div></td>
-                        <td class="num {row["change_class"]}">{row["change"]}</td>
-                    </tr>
-"""
-
-    html += f"""                </tbody>
-            </table>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('side-by-side')">Rinnakkain</div>
+            <div class="tab" onclick="switchTab('duunitori')">Duunitori</div>
+            <div class="tab" onclick="switchTab('joblistings')">Joblistings</div>
         </div>
 
-        <div class="card">
-            <h2>Kehitys (viimeiset 30 päivää)</h2>
-            <div class="chart-container">
-                <canvas id="trendChart"></canvas>
+        <!-- Rinnakkain -->
+        <div id="tab-side-by-side" class="tab-content active">
+            <div class="dual-panels">
+                <div class="card">
+                    <h2>Duunitori <span class="badge badge-scrape">SCRAPE</span></h2>
+                    <table>
+                        <thead><tr><th>Tehtävä</th><th class="num">Avoimia</th><th class="bar-cell"></th></tr></thead>
+                        <tbody>
+{duunitori_rows}                        </tbody>
+                    </table>
+                    <div class="note">Aggregoi TE-palvelut, yrityssivustot ym. Luvut = hakutulosten määrä.</div>
+                </div>
+                <div class="card">
+                    <h2>Joblistings <span class="badge badge-api">API</span></h2>
+                    <table>
+                        <thead><tr><th>Tehtävä</th><th class="num">Avoimia</th><th class="bar-cell"></th></tr></thead>
+                        <tbody>
+{joblistings_rows}                        </tbody>
+                    </table>
+                    <div class="note">AI-luokitellut ilmoitukset joblistings.aiexp.fi:stä ({api_all} ilmoitusta yhteensä).</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Duunitori -->
+        <div id="tab-duunitori" class="tab-content">
+            <div class="card">
+                <h2>Duunitori — avoimet työpaikat <span class="badge badge-scrape">SCRAPE</span></h2>
+                <table>
+                    <thead><tr><th>Tehtävä</th><th class="num">Avoimia</th><th class="bar-cell"></th></tr></thead>
+                    <tbody>
+{duunitori_rows}                    </tbody>
+                </table>
+                <div class="note">Duunitori aggregoi useita lähteitä (TE-palvelut, yrityssivustot ym.). Päivitetty {duunitori_time}.</div>
+            </div>
+            <div class="card">
+                <h2>Duunitori — kehitys (viimeiset 30 päivää)</h2>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Joblistings -->
+        <div id="tab-joblistings" class="tab-content">
+            <div class="card">
+                <h2>Joblistings — avoimet työpaikat <span class="badge badge-api">API</span></h2>
+                <table>
+                    <thead><tr><th>Tehtävä</th><th class="num">Avoimia</th><th class="bar-cell"></th></tr></thead>
+                    <tbody>
+{joblistings_rows}                    </tbody>
+                </table>
+                <div class="note">{api_all} ilmoitusta yhteensä, joista {joblistings_total} luokiteltu IT-kategorioihin. Päivitetty {joblistings_time}.</div>
             </div>
         </div>
     </div>
 
     <div class="footer">
-        Data: {source_name}
+        Data: Duunitori &amp; Joblistings API (joblistings.aiexp.fi)
     </div>
 
     <script>
-        const ctx = document.getElementById('trendChart').getContext('2d');
-        new Chart(ctx, {{
-            type: 'line',
-            data: {{
-                labels: {json.dumps(dates)},
-                datasets: {json.dumps(chart_datasets, ensure_ascii=False)}
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {{ mode: 'index', intersect: false }},
-                plugins: {{
-                    legend: {{
-                        position: 'bottom',
-                        labels: {{ color: '#94a3b8', boxWidth: 12, padding: 15, font: {{ size: 11 }} }}
-                    }},
-                    tooltip: {{
-                        backgroundColor: '#1e293b', borderColor: '#475569', borderWidth: 1,
-                        titleColor: '#f8fafc', bodyColor: '#e2e8f0',
-                    }}
-                }},
-                scales: {{
-                    x: {{ ticks: {{ color: '#64748b' }}, grid: {{ color: '#1e293b' }} }},
-                    y: {{ ticks: {{ color: '#64748b' }}, grid: {{ color: '#1e293b' }}, beginAtZero: true }}
-                }}
+        function switchTab(name) {{
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            event.target.classList.add('active');
+            // Init chart when Duunitori tab shown
+            if (name === 'duunitori' && !window.chartInit) {{
+                initChart();
             }}
-        }});
+        }}
+
+        function initChart() {{
+            window.chartInit = true;
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctx, {{
+                type: 'line',
+                data: {{
+                    labels: {json.dumps(d_dates)},
+                    datasets: {json.dumps(d_datasets, ensure_ascii=False)}
+                }},
+                options: {{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {{ mode: 'index', intersect: false }},
+                    plugins: {{
+                        legend: {{
+                            position: 'bottom',
+                            labels: {{ color: '#94a3b8', boxWidth: 12, padding: 15, font: {{ size: 11 }} }}
+                        }},
+                        tooltip: {{
+                            backgroundColor: '#1e293b', borderColor: '#475569', borderWidth: 1,
+                            titleColor: '#f8fafc', bodyColor: '#e2e8f0',
+                        }}
+                    }},
+                    scales: {{
+                        x: {{ ticks: {{ color: '#64748b' }}, grid: {{ color: '#1e293b' }} }},
+                        y: {{ ticks: {{ color: '#64748b' }}, grid: {{ color: '#1e293b' }}, beginAtZero: true }}
+                    }}
+                }}
+            }});
+        }}
     </script>
 </body>
 </html>"""
