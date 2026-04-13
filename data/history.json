@@ -2336,5 +2336,81 @@
       }
     },
     "timestamp": "2026-04-12T06:33:03.294589"
+  },
+  {
+    "date": "2026-04-13",
+    "source": "duunitori",
+    "categories": {
+      "Ohjelmistokehitys": {
+        "count": 103
+      },
+      "Fullstack": {
+        "count": 48
+      },
+      "Frontend": {
+        "count": 6
+      },
+      "Backend": {
+        "count": 19
+      },
+      "Embedded / Sulautetut": {
+        "count": 8
+      },
+      "Mobiilisovelluskehitys": {
+        "count": 9
+      },
+      "Design (UX/UI)": {
+        "count": 3
+      },
+      "Testaus / QA": {
+        "count": 51
+      },
+      "Data & BI": {
+        "count": 12
+      },
+      "Data Scientist": {
+        "count": 8
+      },
+      "Data Engineer": {
+        "count": 56
+      },
+      "Data Architect": {
+        "count": 10
+      },
+      "DevOps / SRE": {
+        "count": 18
+      },
+      "Tietoturva / IAM": {
+        "count": 10
+      },
+      "IT-projektinhallinta": {
+        "count": 6
+      },
+      "Järjestelmäasiantuntija": {
+        "count": 30
+      },
+      "SAP / ERP": {
+        "count": 5
+      },
+      "SW Architect": {
+        "count": 10
+      },
+      "Cloud Engineer": {
+        "count": 17
+      },
+      "Cloud Architect": {
+        "count": 8
+      },
+      "GenAI Engineer": {
+        "count": 3
+      },
+      "AI Engineer": {
+        "count": 50
+      },
+      "GenAI Architect": {
+        "count": 10
+      }
+    },
+    "timestamp": "2026-04-13T06:44:48.877436"
   }
 ]
